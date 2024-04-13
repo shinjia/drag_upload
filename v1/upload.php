@@ -1,12 +1,12 @@
 <?php
 
 // 管理者自訂的上傳規則
-$allow_ext = array('jpg', 'gif');  // 設定可接受上傳的檔案類型
+$allow_ext = array('jpg', 'png');  // 設定可接受上傳的檔案類型
 $allow_size = 5000 * 1024;  // 限制接受的檔案大小 (此處設定為 5MB)
 $allow_overwrite = true;   // 限制不能覆蓋相同檔名 (若接受，則相同檔名時會覆蓋舊檔)
 
 // 指定存檔的資料夾
-$path = '../file/';
+$path = '../upload/';
 
 // 判斷能否存入，若無則建立新的資料夾
 if(!is_dir($path)) {
@@ -49,7 +49,7 @@ if (isset($_FILES['file'])) {
         if(!in_array(strtolower($file_ext), $allow_ext)) {
             $check_ok = false;        
             $response['status'] = 'error';
-            $response['message'] = '檔案已存在，無法儲存';
+            $response['message'] = '不接受的檔案類型';
         }
         
         // 檢查是否已有相同檔案存在
