@@ -80,6 +80,7 @@ if (isset($_FILES['file'])) {
             if(@move_uploaded_file($file_tmp, $save_full)) {
                 $response['status'] = 'success';
                 $response['message'] = '檔案上傳成功: ' . $save_name;
+                $response['imgname'] = $save_full;
             }
             else {
                 $response['status'] = 'error';
@@ -93,10 +94,11 @@ if (isset($_FILES['file'])) {
     }
 }
 
-// for Test
+// 用 upload_test.php 來測試此程式
 // echo '<pre>';
 // print_r($response);
 // echo '</pre>';
+// exit;
 
 // 回傳 JSON 格式的回應給客戶端
 header('Content-Type: application/json');
