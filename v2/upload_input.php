@@ -2,40 +2,79 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>文件上傳</title>
+    <title>文件上傳與預覽</title>
     <style>
         #drop_zone {
             border: 2px dashed #ccc;
             padding: 20px;
             text-align: center;
         }
-        #show_zone {
+        #preview_zone {
             margin-top: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: start;
+        }
+        #show_zone {
+            margin-top: 20px;
+            color: green;
         }
         img {
             width: 100px;
-            margin: 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
+        }
+        .file-container {
+            margin: 10px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f9f9f9;
+            position: relative; /* Allows absolute positioning of the remove button */
+        }
+        .delete-btn {
+            cursor: pointer;
+            color: white;
+            font-weight: bold;
+            font-size: 12px;
+            background-color: #ff4d4d; /* Red background */
+            border: none;
+            padding: 5px 6px;
+            border-radius: 5px;
+            position: absolute;
+            top: 10px;
+            right: 10px;
+        }
+        .file-info {
+            margin-top: 20px; /* Give space for the button */
+            font-size: 14px;
+        }
+        .img-container {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            margin-top: 5px;
         }
     </style>
 </head>
 <body>
     <div id="drop_zone">拖動檔案到這裡或 <input type="file" id="file_input" multiple accept="image/*,application/pdf"></input></div>
     <button onclick="uploadFiles()">上傳檔案</button>
+    <div id="preview_zone"></div>
     <div id="show_zone"></div>
     <script>
-        // 參數設定
         let dropZone = document.getElementById('drop_zone');
+        let previewZone = document.getElementById('preview_zone');
         let showZone = document.getElementById('show_zone');
         let fileInput = document.getElementById('file_input');
-        let file_element_name = 'file';  // FILE 表單元件名稱
-        let url_upload = 'upload_save.php'; // PHP 處理檔案上傳的 URL
 
         let files = [];
 
         dropZone.addEventListener('dragover', (event) => {
-            event.preventDefault(); // 防止預設行為
+            event.preventDefault();
         });
 
         dropZone.addEventListener('drop', (event) => {
@@ -48,33 +87,57 @@
         });
 
         function addFiles(newFiles) {
-            newFiles = Array.from(newFiles); // 將 FileList 轉換為 Array
+            newFiles = Array.from(newFiles);
             newFiles.forEach(file => {
                 if (!files.some(f => f.name === file.name && f.size === file.size && f.lastModified === file.lastModified)) {
-                    files.push(file); // 僅添加新檔案，避免重複
-                    displayFile(file);
+                    files.push(file);
+                    displayFile(file, files.length - 1);
                 }
             });
         }
 
-        function displayFile(file) {
+        function displayFile(file, index) {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const fileDiv = document.createElement('div');
-                const fileInfo = document.createElement('div');
-                fileInfo.textContent = `檔案待上傳: ${file.name}`;
+                fileDiv.className = 'file-container';
 
-                fileDiv.appendChild(fileInfo);
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = '移除';
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.onclick = () => removeFile(index);
+
+                const fileInfo = document.createElement('div');
+                fileInfo.textContent = `待上傳: ${file.name}`;
+                fileInfo.className = 'file-info';
+
+                const imgContainer = document.createElement('div');
+                imgContainer.className = 'img-container';
 
                 if (file.type.startsWith('image/')) {
                     const img = document.createElement('img');
                     img.src = e.target.result;
-                    fileDiv.appendChild(img);
+                    imgContainer.appendChild(img);
                 }
 
-                showZone.appendChild(fileDiv);
+                fileDiv.appendChild(deleteBtn);
+                fileDiv.appendChild(fileInfo);
+                fileDiv.appendChild(imgContainer);
+                previewZone.appendChild(fileDiv);
             };
             reader.readAsDataURL(file);
+        }
+
+        function removeFile(index) {
+            files.splice(index, 1); // 移除檔案
+            updateShowZone(); // 更新顯示區
+        }
+
+        function updateShowZone() {
+            previewZone.innerHTML = '';
+            files.forEach((file, index) => {
+                displayFile(file, index);
+            });
         }
 
         function uploadFiles() {
@@ -83,13 +146,13 @@
                 formData.append('file[]', file);
             });
 
-            fetch(url_upload, {
+            fetch('upload_save.php', {
                 method: 'POST',
                 body: formData,
             })
-            .then(response => response.json()) // 假設後端返回JSON格式
+            .then(response => response.json())
             .then(result => {
-                showZone.innerHTML = ''; // 清空舊訊息
+                showZone.innerHTML = '';
                 result.messages.forEach(msg => {
                     const message = document.createElement('div');
                     message.textContent = msg;
